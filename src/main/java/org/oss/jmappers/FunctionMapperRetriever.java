@@ -26,7 +26,7 @@ class FunctionMapperRetriever implements MapperRetriever {
     }
 
     private boolean isFunctionMethod(Method method) {
-        return method.getName().equals("applyTo") && method.getParameterCount() == 1
+        return method.getName().equals("apply") && method.getParameterCount() == 1
                 && !method.isSynthetic();
     }
 }

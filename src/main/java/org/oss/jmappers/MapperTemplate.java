@@ -6,10 +6,9 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 
 @Component
@@ -17,11 +16,24 @@ public class MapperTemplate {
 
     @Autowired
     private ApplicationContext applicationContext;
+    private final Map<MappingClasses, Function> mappers = new ConcurrentHashMap<>();
+    private final List<MapperRetriever> mapperRetrievers = new CopyOnWriteArrayList<>();
 
-    private Map<MappingClasses, Function> mappers = new ConcurrentHashMap<MappingClasses, Function>();
+    public MapperTemplate() {
+        mapperRetrievers.add(new AnnotationMapperRetriever());
+        mapperRetrievers.add(new FunctionMapperRetriever());
+    }
 
-    public <T> T map(Object source, Class<?> destinationType) {
-        return null;
+    @SuppressWarnings("unchecked")
+    public <T> T map(Object source, Class<?> destinationClass) {
+        Class<?> sourceClass = source.getClass();
+        MappingClasses mappingClasses = new MappingClasses(sourceClass, destinationClass);
+        Function function = mappers.get(mappingClasses);
+        if (function == null) {
+            throw new IllegalArgumentException("Mapper from source class '" + sourceClass + "" +
+                    "' to destination class '" + destinationClass + "' not found");
+        }
+        return (T) function.apply(source);
     }
 
     public <FROM, TO> void registerMapper(Class<FROM> from, Class<TO> to, Function<FROM, TO> function) {
@@ -37,7 +49,6 @@ public class MapperTemplate {
         return Optional.ofNullable(mappers.get(new MappingClasses(from, to)));
     }
 
-
     @EventListener(ContextRefreshedEvent.class)
     void contextRefreshedEvent() {
         Map<String, Object> mappersByName = applicationContext.getBeansWithAnnotation(Mapper.class);
@@ -46,7 +57,15 @@ public class MapperTemplate {
 
     private void populateMappers(Collection<Object> mapperBeans) {
         for (Object mapperBean : mapperBeans) {
-
+            int sizeBefore = mappers.size();
+            for (MapperRetriever mapperRetriever : mapperRetrievers) {
+                mapperRetriever.addMappers(mappers::put, mapperBean);
+            }
+            if (sizeBefore == mappers.size()) {
+                throw new IllegalStateException("Unable to configure mapper; bean class '" + mapperBean.getClass() +
+                        "' is annotated with '" + Mapper.class + "' but does not have neither @MappingMethod annotation" +
+                        "nor implements Function interface");
+            }
         }
     }
 

@@ -6,7 +6,7 @@ import java.lang.reflect.Method;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
-public class AnnotationMapperRetriever implements MapperRetriever {
+class AnnotationMapperRetriever implements MapperRetriever {
     @Override
     public void addMappers(BiConsumer<MappingClasses, Function> consumer, Object mapper) {
         for (Method method : mapper.getClass().getMethods()) {
