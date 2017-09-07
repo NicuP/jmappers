@@ -11,19 +11,39 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 
+/**
+ * Generic class with the purpose of decoupling mapping between DTOs and entities (or any generic
+ * POJOs). The mappers can be configured automatically, using Spring or manually by calling this class.
+ *
+ * Mapper classes should be annotated with @Mapper, so they are picked up by Spring.
+ *
+ * The client classes should only call map method from this class, and shouldn't be aware of the mappers themselves.
+ *
+ * @see Mapper
+ * @see MappingMethod
+ */
 @Component
 public class MapperTemplate {
 
-    @Autowired
     private ApplicationContext applicationContext;
     private final Map<MappingClasses, Function> mappers = new ConcurrentHashMap<>();
     private final List<MapperRetriever> mapperRetrievers = new CopyOnWriteArrayList<>();
 
-    public MapperTemplate() {
+    @Autowired
+    public MapperTemplate(ApplicationContext applicationContext) {
+        this.applicationContext = applicationContext;
         mapperRetrievers.add(new AnnotationMapperRetriever());
         mapperRetrievers.add(new FunctionMapperRetriever());
     }
 
+    /**
+     * Maps the source into the specified destination class, provided there is a mapper defined
+     * from source to destination
+     *
+     * @param source the source to be mapped
+     * @param destinationClass the type of the bean to be mapped to
+     * @return the mapped object
+     */
     @SuppressWarnings("unchecked")
     public <T> T map(Object source, Class<?> destinationClass) {
         Class<?> sourceClass = source.getClass();
@@ -36,10 +56,20 @@ public class MapperTemplate {
         return (T) function.apply(source);
     }
 
+    /**
+     * Manually register a new mapper; to be used only when Spring not available
+     *
+     * @param from the type of the origin class
+     * @param to the type of the destination class
+     * @param function the mapping function from FROM to TO
+     */
     public <FROM, TO> void registerMapper(Class<FROM> from, Class<TO> to, Function<FROM, TO> function) {
         mappers.put(new MappingClasses(from, to), function);
     }
 
+    /**
+     * Unregisters the mapper for the specified classes
+     */
     public void unregisterMapper(Class<?> from, Class<?> to) {
         mappers.remove(new MappingClasses(from, to));
     }

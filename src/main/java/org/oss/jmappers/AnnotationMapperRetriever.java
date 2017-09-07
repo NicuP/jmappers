@@ -12,6 +12,11 @@ class AnnotationMapperRetriever implements MapperRetriever {
         for (Method method : mapper.getClass().getMethods()) {
             if (method.isAnnotationPresent(MappingMethod.class)) {
                 MappingClasses mappingClasses = new MappingClasses(method);
+                if (method.getParameterCount() != 1 || method.getReturnType().equals(void.class) ||
+                        method.getReturnType().equals(Void.class)) {
+                    throw new IllegalStateException("Methods annotated with " + MappingMethod.class
+                            + " should only accept one parameter and return something");
+                }
                 Function function = param -> ReflectionUtils.invokeMethod(method, mapper, param);
                 consumer.accept(mappingClasses, function);
             }

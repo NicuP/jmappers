@@ -7,7 +7,6 @@ import org.oss.test.pojos.matching.Person;
 import org.oss.test.pojos.matching.PersonDto;
 import org.springframework.stereotype.Service;
 
-@Service
 @Mapper
 public class ServiceWithAnnotationMethod {
 

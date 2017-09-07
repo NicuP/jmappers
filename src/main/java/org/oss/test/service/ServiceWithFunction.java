@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.function.Function;
 
-@Service
 @Mapper
 public class ServiceWithFunction implements Function<Person, PersonDto> {
 

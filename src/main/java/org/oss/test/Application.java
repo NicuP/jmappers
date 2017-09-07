@@ -11,7 +11,7 @@ public class Application {
         AnnotationConfigApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
         MapperTemplate mapperTemplate = ac.getBean(MapperTemplate.class);
 
-        Person person = StubFactory.customInstance().createStub(Person.class);
+        Person person = StubFactory.get().createStub(Person.class);
         PersonDto personDto = mapperTemplate.map(person, PersonDto.class);
         Person personMapped2 = mapperTemplate.map(personDto, Person.class);
         if (!person.equals(personMapped2)) {
@@ -20,7 +20,7 @@ public class Application {
             System.out.println("okay");
         }
 
-        PersonDto personDto1 = StubFactory.instance().createStub(PersonDto.class);
+        PersonDto personDto1 = StubFactory.get().createStub(PersonDto.class);
         Person person1 = mapperTemplate.map(personDto1, Person.class);
         PersonDto personDtoMapped = mapperTemplate.map(person1, PersonDto.class);
         if (!personDto1.equals(personDtoMapped)) {
